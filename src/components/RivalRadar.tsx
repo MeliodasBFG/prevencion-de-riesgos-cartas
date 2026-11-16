@@ -26,6 +26,7 @@ interface RivalRadarProps {
   validBenchmarkSources: { playerId: string; sector: ConcreteSector }[];
   selectedTarget: { playerId: string; sector: ConcreteSector } | null;
   selectedBenchmarkSource: { playerId: string; sector: ConcreteSector } | null;
+  hoveredRivalId?: string | null;
   onSelectRivalTarget: (playerId: string, sector: ConcreteSector) => void;
   onSelectBenchmarkSource: (playerId: string, sector: ConcreteSector) => void;
 }
@@ -37,6 +38,7 @@ export function RivalRadar({
   validBenchmarkSources,
   selectedTarget,
   selectedBenchmarkSource,
+  hoveredRivalId,
   onSelectRivalTarget,
   onSelectBenchmarkSource,
 }: RivalRadarProps) {
@@ -143,17 +145,22 @@ export function RivalRadar({
             setExpandedRivalId((prev) => (prev === rival.id ? null : rival.id));
           };
 
-          const borderClass = isSelected
-            ? 'border-yellow-300 ring-2 ring-yellow-400/80 bg-amber-500/15'
-            : isValidTarget
-              ? isHazardMode
-                ? 'border-red-400/90 ring-2 ring-red-500/60 bg-red-950/25 cursor-pointer hover:bg-red-950/40'
-                : 'border-amber-400/90 ring-2 ring-amber-400/60 bg-amber-950/25 cursor-pointer hover:bg-amber-950/40'
-              : 'border-slate-800 bg-slate-900/80';
+          const isDragHovered = isValidTarget && hoveredRivalId === rival.id;
+
+          const borderClass = isDragHovered
+            ? 'border-yellow-300 ring-4 ring-yellow-400/90 bg-amber-500/25 scale-[1.03]'
+            : isSelected
+              ? 'border-yellow-300 ring-2 ring-yellow-400/80 bg-amber-500/15'
+              : isValidTarget
+                ? isHazardMode
+                  ? 'border-red-400/90 ring-2 ring-red-500/60 bg-red-950/25 cursor-pointer hover:bg-red-950/40'
+                  : 'border-amber-400/90 ring-2 ring-amber-400/60 bg-amber-950/25 cursor-pointer hover:bg-amber-950/40'
+                : 'border-slate-800 bg-slate-900/80';
 
           return (
             <div
               key={rival.id}
+              data-drop-rival={isValidTarget ? rival.id : undefined}
               onClick={handleCardClick}
               role={isValidTarget ? 'button' : undefined}
               tabIndex={isValidTarget ? 0 : undefined}

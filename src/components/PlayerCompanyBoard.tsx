@@ -22,6 +22,7 @@ interface PlayerCompanyBoardProps {
   selectedCard: CardInstance | null;
   validSelfSectors: ConcreteSector[];
   selectedSelfSector: ConcreteSector | null;
+  hoveredSelfSector?: ConcreteSector | null;
   awaitingBenchmarkTarget: boolean;
   onSelectSelfSector: (sector: ConcreteSector) => void;
 }
@@ -31,6 +32,7 @@ export function PlayerCompanyBoard({
   selectedCard,
   validSelfSectors,
   selectedSelfSector,
+  hoveredSelfSector,
   awaitingBenchmarkTarget,
   onSelectSelfSector,
 }: PlayerCompanyBoardProps) {
@@ -102,7 +104,12 @@ export function PlayerCompanyBoard({
               'border-sky-500/40 bg-gradient-to-br from-sky-500/10 to-slate-950';
           }
 
-          if (isSelected) {
+          const isDragHovered = isValid && hoveredSelfSector === sector;
+
+          if (isDragHovered) {
+            cardTheme =
+              'border-amber-300 ring-4 ring-amber-400/90 bg-emerald-500/25 scale-[1.03]';
+          } else if (isSelected) {
             cardTheme =
               'border-yellow-300 ring-2 ring-yellow-400 bg-amber-500/15';
           } else if (isValid) {
@@ -114,6 +121,7 @@ export function PlayerCompanyBoard({
             <button
               key={sector}
               type="button"
+              data-drop-self-sector={isValid ? sector : undefined}
               disabled={!isValid}
               onClick={() => isValid && onSelectSelfSector(sector)}
               className={`text-left rounded-xl border p-3 transition-all relative overflow-hidden ${cardTheme} disabled:cursor-default`}

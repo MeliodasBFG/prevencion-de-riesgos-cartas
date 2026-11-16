@@ -16,6 +16,7 @@ import {
   PlayerActionSubmission,
   PlayerState,
   PublicPlayerSummary,
+  ResolvedPlayVisual,
   RoundEvent,
   WorkstationSlot,
 } from '@/types/game';
@@ -152,6 +153,7 @@ export function createInitialGameState(
     discardPile: [],
     pendingActions: {},
     roundBulletin: [],
+    lastResolvedPlays: [],
     winnerIds: [],
     endReason: null,
     globalInspectionTriggered: false,
@@ -323,6 +325,7 @@ export function startGame(state: GameState): GameState {
     discardPile,
     pendingActions: {},
     roundBulletin: [],
+    lastResolvedPlays: [],
     winnerIds: [],
     endReason: null,
     globalInspectionTriggered: false,
@@ -342,6 +345,7 @@ export function resetToLobby(state: GameState): GameState {
     discardPile: [],
     pendingActions: {},
     roundBulletin: [],
+    lastResolvedPlays: [],
     winnerIds: [],
     endReason: null,
     globalInspectionTriggered: false,
@@ -851,6 +855,7 @@ export function resolveRound(state: GameState): GameState {
   let deck = [...state.deck];
   let discardPile = [...state.discardPile];
   const bulletin: RoundEvent[] = [];
+  const resolvedPlays: ResolvedPlayVisual[] = [];
 
   // Normalize missing submissions -> PASS
   const submissions: PlayerActionSubmission[] = players.map((p) => {
@@ -921,6 +926,16 @@ export function resolveRound(state: GameState): GameState {
           [actor.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        outcome: 'WORKSTATION',
+        outcomeLabel: 'Puesto abierto (+40)',
+        priority: 1,
+      });
     } else {
       actor.lastActionSummary = `${slot.title} ya estaba ocupado`;
     }
@@ -933,6 +948,7 @@ export function resolveRound(state: GameState): GameState {
   const applyPreventiveEffect = (
     actor: PlayerState,
     slot: WorkstationSlot,
+    card: CardInstance,
     sourceLabel: string,
     quizResult?: { questionId: string; correct: boolean }
   ) => {
@@ -949,6 +965,16 @@ export function resolveRound(state: GameState): GameState {
           [actor.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        outcome: 'PREVENTED',
+        outcomeLabel: 'Riesgo neutralizado (+50)',
+        priority: 2,
+      });
       return;
     }
 
@@ -964,6 +990,16 @@ export function resolveRound(state: GameState): GameState {
           [actor.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        outcome: 'SHIELD',
+        outcomeLabel: 'Escudo x1 (+50)',
+        priority: 2,
+      });
       return;
     }
 
@@ -984,6 +1020,16 @@ export function resolveRound(state: GameState): GameState {
           [actor.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        outcome: 'CERTIFIED',
+        outcomeLabel: '¡ISO 45001! (+300)',
+        priority: 2,
+      });
     } else {
       slot.shields = 1;
       actor.lastActionSummary = `Auditoría ISO fallida en ${slot.title} (sigue x1 escudo)`;
@@ -995,6 +1041,16 @@ export function resolveRound(state: GameState): GameState {
           [actor.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        outcome: 'AUDIT_FAILED',
+        outcomeLabel: 'Auditoría fallida',
+        priority: 2,
+      });
     }
   };
 
@@ -1021,6 +1077,16 @@ export function resolveRound(state: GameState): GameState {
             [actor.id]
           )
         );
+        resolvedPlays.push({
+          id: `rp-${actor.id}-${card.id}`,
+          playerId: actor.id,
+          playerName: actor.name,
+          playerAvatar: actor.avatar,
+          card,
+          outcome: 'EMERGENCY',
+          outcomeLabel: `Limpió ${cleared} riesgo(s)`,
+          priority: 2,
+        });
       } else {
         actor.lastActionSummary = 'Plan de Emergencia sin riesgos activos';
       }
@@ -1035,7 +1101,7 @@ export function resolveRound(state: GameState): GameState {
       if (!slot.occupied || slot.certified) continue;
       if (card.sector !== 'ALL' && card.sector !== targetSector) continue;
 
-      applyPreventiveEffect(actor, slot, card.title, sub.quizResult);
+      applyPreventiveEffect(actor, slot, card, card.title, sub.quizResult);
       continue;
     }
 
@@ -1059,6 +1125,7 @@ export function resolveRound(state: GameState): GameState {
         applyPreventiveEffect(
           actor,
           targetSlot,
+          card,
           `Benchmarking (${sourcePlayer.name})`,
           sub.quizResult
         );
@@ -1091,6 +1158,17 @@ export function resolveRound(state: GameState): GameState {
     const slot = target.workstations[targetSector];
     if (!slot.occupied) {
       actor.lastActionSummary = `Riesgo en ${target.name} (${SECTOR_META[targetSector].shortLabel}) sin puesto activo`;
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'MISS',
+        outcomeLabel: 'Sin objetivo',
+        priority: 3,
+      });
       continue;
     }
 
@@ -1104,6 +1182,17 @@ export function resolveRound(state: GameState): GameState {
           [actor.id, target.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'BLOCKED',
+        outcomeLabel: 'Blindado ISO 45001',
+        priority: 3,
+      });
       continue;
     }
 
@@ -1119,6 +1208,17 @@ export function resolveRound(state: GameState): GameState {
           [actor.id, target.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'BLOCKED',
+        outcomeLabel: 'Bloqueado por EPI',
+        priority: 3,
+      });
       continue;
     }
 
@@ -1134,6 +1234,17 @@ export function resolveRound(state: GameState): GameState {
           [actor.id, target.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'RISK',
+        outcomeLabel: '¡En Riesgo!',
+        priority: 3,
+      });
       continue;
     }
 
@@ -1152,6 +1263,17 @@ export function resolveRound(state: GameState): GameState {
         [actor.id, target.id]
       )
     );
+    resolvedPlays.push({
+      id: `rp-${actor.id}-${card.id}`,
+      playerId: actor.id,
+      playerName: actor.name,
+      playerAvatar: actor.avatar,
+      card,
+      targetName: target.name,
+      outcome: 'ACCIDENT',
+      outcomeLabel: '¡Siniestro!',
+      priority: 3,
+    });
   }
 
   // 3b. Safe Subcontracting
@@ -1187,8 +1309,30 @@ export function resolveRound(state: GameState): GameState {
           [actor.id, target.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'STEAL',
+        outcomeLabel: 'Subcontratado (+60)',
+        priority: 3,
+      });
     } else {
       actor.lastActionSummary = `Subcontratación fallida en ${SECTOR_META[targetSector].shortLabel}`;
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'MISS',
+        outcomeLabel: 'Bloqueado',
+        priority: 3,
+      });
     }
   }
 
@@ -1217,6 +1361,17 @@ export function resolveRound(state: GameState): GameState {
           [actor.id, target.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'INSPECTION',
+        outcomeLabel: '¡Infracción! (+100)',
+        priority: 3,
+      });
     } else {
       actor.lastActionSummary = `Inspección a ${target.name}: sin infracciones`;
       bulletin.push(
@@ -1227,6 +1382,17 @@ export function resolveRound(state: GameState): GameState {
           [actor.id, target.id]
         )
       );
+      resolvedPlays.push({
+        id: `rp-${actor.id}-${card.id}`,
+        playerId: actor.id,
+        playerName: actor.name,
+        playerAvatar: actor.avatar,
+        card,
+        targetName: target.name,
+        outcome: 'MISS',
+        outcomeLabel: 'Sin infracciones',
+        priority: 3,
+      });
     }
   }
 
@@ -1310,6 +1476,7 @@ export function resolveRound(state: GameState): GameState {
     discardPile,
     pendingActions: {},
     roundBulletin: bulletin,
+    lastResolvedPlays: resolvedPlays,
     globalInspectionTriggered,
   };
 }
@@ -1369,6 +1536,7 @@ export function advanceFromResolution(state: GameState): GameState {
     paused: false,
     pendingActions: {},
     globalInspectionTriggered: false,
+    lastResolvedPlays: [],
     players: state.players.map((p) => ({ ...p, ready: false })),
   };
 
@@ -1414,6 +1582,11 @@ export function sanitizeStateForPlayer(
     me,
     myPendingAction: state.pendingActions[viewerPlayerId] ?? null,
     roundBulletin: state.roundBulletin,
+    lastResolvedPlays: state.lastResolvedPlays,
+    topDiscardCard:
+      state.discardPile.length > 0
+        ? state.discardPile[state.discardPile.length - 1]
+        : null,
     winnerIds: state.winnerIds,
     endReason: state.endReason,
     globalInspectionTriggered: state.globalInspectionTriggered,

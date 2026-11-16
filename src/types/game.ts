@@ -139,6 +139,18 @@ export interface GameConfig {
   maxPlayers: number;
 }
 
+export interface ResolvedPlayVisual {
+  id: string;
+  playerId: string;
+  playerName: string;
+  playerAvatar: string;
+  card: CardInstance;
+  targetName?: string;
+  outcome: RoundEventType | 'MISS';
+  outcomeLabel: string;
+  priority: 1 | 2 | 3;
+}
+
 export type GamePhase = 'LOBBY' | 'PLANNING' | 'RESOLUTION' | 'GAME_OVER';
 
 export interface GameState {
@@ -153,6 +165,7 @@ export interface GameState {
   discardPile: CardInstance[];
   pendingActions: Record<string, PlayerActionSubmission>;
   roundBulletin: RoundEvent[];
+  lastResolvedPlays: ResolvedPlayVisual[];
   winnerIds: string[];
   endReason: string | null;
   globalInspectionTriggered: boolean;
@@ -169,6 +182,8 @@ export interface ClientGameView {
   me: PlayerState | null;
   myPendingAction: PlayerActionSubmission | null;
   roundBulletin: RoundEvent[];
+  lastResolvedPlays: ResolvedPlayVisual[];
+  topDiscardCard: CardInstance | null;
   winnerIds: string[];
   endReason: string | null;
   globalInspectionTriggered: boolean;

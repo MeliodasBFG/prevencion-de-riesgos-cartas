@@ -2,7 +2,6 @@
 
 import { useState, useSyncExternalStore } from 'react';
 import {
-  BookOpen,
   Bot,
   Check,
   Copy,
@@ -36,6 +35,7 @@ import {
   RoundDuration,
   WinMode,
 } from '@/types/game';
+import { InstructionBookButton } from './InstructionBookButton';
 
 interface LandingLobbyProps {
   initialRoomParam: string;
@@ -182,13 +182,7 @@ export function LandingLobby({
                   <Volume2 className="w-4 h-4 text-emerald-400" />
                 )}
               </button>
-              <button
-                type="button"
-                onClick={onOpenGuide}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-200"
-              >
-                <BookOpen className="w-4 h-4 text-amber-400" /> Guía PRL
-              </button>
+              <InstructionBookButton onClick={onOpenGuide} />
               <button
                 type="button"
                 onClick={onLeaveRoom}
@@ -497,13 +491,7 @@ export function LandingLobby({
                 <Volume2 className="w-4 h-4 text-emerald-400" />
               )}
             </button>
-            <button
-              type="button"
-              onClick={onOpenGuide}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200"
-            >
-              <BookOpen className="w-4 h-4 text-amber-400" /> Reglas y Guía PRL
-            </button>
+            <InstructionBookButton onClick={onOpenGuide} />
           </div>
         </div>
 
